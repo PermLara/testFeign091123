@@ -3,14 +3,19 @@ package org.kata.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.kata.dto.IndividualAndContactDto;
 import org.kata.dto.IndividualAndRfPassportDto;
 import org.kata.dto.IndividualDto;
 import org.kata.dto.ShortIndividualDto;
+import org.kata.exception.ParameterNotValidException;
 import org.kata.service.IndividualService;
+import org.kata.util.Icp;
+import org.kata.util.IcpConstraint;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -28,8 +33,8 @@ public class IndividualController {
     @Operation(summary = "Короткий формат: ФИО и дата рождения")
     @GetMapping("/getShortIndividualInformation")
     public ResponseEntity<ShortIndividualDto> getShort(
-            @Parameter(description = "ICP identifier", required = true) @RequestParam String icp) {
-        return new ResponseEntity<>(individualService.getShortIndividualInformation(icp), HttpStatus.OK);
+            @Parameter(description = "ICP identifier", required = true) @RequestParam @Valid Icp icp) {
+        return new ResponseEntity<>(individualService.getShortIndividualInformation(icp.toString()), HttpStatus.OK);
     }
 
     @Operation(summary = "ФИО, дата рождения и контакты")
@@ -51,5 +56,11 @@ public class IndividualController {
     public ResponseEntity<IndividualDto> getFull(
             @Parameter(description = "ICP identifier", required = true) @RequestParam String icp) {
         return new ResponseEntity<>(individualService.getFullIndividualInformation(icp), HttpStatus.OK);
+    }
+
+    @ExceptionHandler(ParameterNotValidException.class)
+    protected ResponseEntity<String> parameterNotValidExceptionHandler(ParameterNotValidException ex){
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ex.getMessage());
     }
 }
